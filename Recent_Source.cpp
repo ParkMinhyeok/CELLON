@@ -1,10 +1,13 @@
 //#include <stdio.h>
+#include <unistd.h>
 #include <iostream>
 #include <time.h>
 #include "opencv2/opencv.hpp"
 #include <wiringPi.h>
+#include <pthread.h>
 
 #define WEB_CAM		0
+#define INPUT_PORT	22
 
 using namespace std;
 using namespace cv;
@@ -38,7 +41,33 @@ int		State_Message_Flag = 0;
 char		img_data_addr[40] = "/home/cellon/CELLON/";
 char		data_addr[40] = "/home/cellon/CELLON/Log_data.txt";
 
+const int	Led[] = {18, 23, 24, 25, 8, 7};		//Led[0] = running, Led[1] = Ready, Led[3] = Bad, Led[4] = Good
+bool		start_signal = false;
+
 ///////////////////////Count Segment/////////////////////////
+void Start_input(){
+	digitalWrite(Led[1], 0);
+	start_signal = true;
+}
+
+void *Run_LED(void*){
+	while(flag != 99){
+		digitalWrite(Led[0], 1);
+		usleep(500000);
+		digitalWrite(Led[0], 0);
+		usleep(500000);
+	}
+}
+
+void *Tr_Res(void *Res){
+	int *Res_temp = (int *)Res;
+	int Port_Num = *Res_temp;
+
+	digitalWrite(Led[Port_Num], 1);
+	usleep(20000);
+	digitalWrite(Led[Port_Num], 0);
+}
+
 void State_Message() {
 	if (State_Message_S[6] != State_Message_S[7]) {
 		State_Message_S[0] = State_Message_S[1];
@@ -337,13 +366,18 @@ int main() {
 		return -1;
 	}
 
-	const int Led[] = {18, 23, 24, 25, 8, 7};
-	for(int i = 0; i < sizeof(Led); i++){
-		pinMode(Led[i], OUTPUT);
-		digitalWrite(Led[i], 0);
+	if(wiringPiISR(INPUT_PORT, INT_EDGE_FALLING, Start_input) < 0){
+		cout << "Interrupt setip fail" << endl;
+		return -1;
 	}
 
-	digitalWrite(Led[1], 1);
+        for(int i = 0; i < sizeof(Led); i++){
+                pinMode(Led[i], OUTPUT);
+                digitalWrite(Led[i], 0);
+        }
+
+	pthread_t pthread_A, pthread_B;
+	pthread_create(&pthread_A, NULL, Run_LED, NULL);
 
 	namedWindow("Show_Frame", WINDOW_FULLSCREEN);
 	setMouseCallback("Show_Frame", Mouse_Event);
@@ -425,6 +459,7 @@ int main() {
 
         clock_t start, end;
 	while (1) {
+		digitalWrite(Led[1], 1);
 		start = clock();
 
 		cap >> frame;
@@ -446,14 +481,13 @@ int main() {
 		if (flag == 1) {
 			circle(Show_Frame, temp, 2, Scalar(0, 0, 255), -1);
 		}
-		else if (flag == -1 && key == 32) {
-			digitalWrite(Led[0], 1);
-			double	result;
-			double maxv;
-			char	maxv_S[11];
-			char	result_S[10];
+		else if (flag == -1 && start_signal == true) {
+			double		result;
+			double		maxv;
+			char		maxv_S[11];
+			char		result_S[10];
 			unsigned char	Standard_ROI_Count = 0;
-			bool			Compare_Flag = true;
+			bool		Compare_Flag = true;
 
 			for (int i = 0; i < Inspect_ROI_Point.size(); i += 2) {
 				Inspect_ROI = Mat(frame, Rect(Point(Inspect_ROI_Point[i]), Point(Inspect_ROI_Point[i + 1])));
@@ -484,13 +518,17 @@ int main() {
 				Compare_Bad++;
 				Compare_Total++;
 				Compare_State(Scalar(0, 0, 255));
-				digitalWrite(Led[5], 1);
+
+				int pn = 3;
+				pthread_create(&pthread_B, NULL, Tr_Res, (void *)&pn);
 			}
 			else {
 				Compare_Good++;
 				Compare_Total++;
 				Compare_State(Scalar(0, 255, 0));
-				digitalWrite(Led[3], 1);
+
+				int pn = 4;
+				pthread_create(&pthread_B, NULL, Tr_Res, (void *)&pn);
 			}
 
 			Compare_Flag = true;
@@ -499,6 +537,8 @@ int main() {
 				rectangle(Show_Frame, Rect(Point(Inspect_ROI_Point[i]),
 					Point(Inspect_ROI_Point[i + 1])), Scalar(0, 0, 255), 2);
 			}
+
+			start_signal = false;
 		}
 		else if (flag == -1) {
 			for (int i = 0; i < Inspect_ROI_Point.size(); i += 2) {
@@ -509,7 +549,6 @@ int main() {
 		else if (flag == 3 && Setting_Mode_Flag == true) {
 			Setting_Mode();
 		}
-
 		else if (flag == 0) {
 			for (int i = 0; i < Inspect_ROI_Point.size(); i += 2) {
 				rectangle(Show_Frame, Rect(Point(Inspect_ROI_Point[i]),
@@ -524,11 +563,10 @@ int main() {
 
 		imshow("Show_Frame", Show_Frame);
 
-		key = waitKey(33);
-		if (key == 27)	break;
-
-		digitalWrite(Led[3], 0);
-		digitalWrite(Led[5], 0);
+		if(waitKey(33) == 27){
+			flag = 99;
+			break;
+		}
 	}
 
 	for(int i = 1; i < Standard_ROI.size() + 1; i++){
