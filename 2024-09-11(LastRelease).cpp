@@ -64,17 +64,17 @@ Point		Resolution_Point = Point(90, 200);
 unsigned int	width, height, ch_width_temp, ch_height_temp;
 int		State_Message_Flag = 0;
 
-char		img_data_addr[40] = "/home/cellon/CELLON/";
-char		resol_data_addr[40] = "/home/cellon/CELLON/resol_data.txt";
-char		Point_data_addr[40] = "/home/cellon/CELLON/Point_data.txt";
-char		Acc_addr[40] = "/home/cellon/CELLON/Acc_data.txt";
-char		ROI_flag_addr[40] = "/home/cellon/CELLON/ROI_flag_data.txt";
-char            NP_flag_addr[40] = "/home/cellon/CELLON/NP_flag_data.txt";
-char            total_data_addr[40] = "/home/cellon/CELLON/total_data.txt";
-char            good_data_addr[40] = "/home/cellon/CELLON/good_data.txt";
-char            bad_data_addr[40] = "/home/cellon/CELLON/bad_data.txt";
-char		Live_mode_addr[40] = "/home/cellon/CELLON/Live_data.txt";
-char		result_image_addr[40] = "/home/cellon/CELLON/Result/";
+char		img_data_addr[40] = "/home/CELLON/CELLON/";
+char		resol_data_addr[40] = "/home/CELLON/CELLON/resol_data.txt";
+char		Point_data_addr[40] = "/home/CELLON/CELLON/Point_data.txt";
+char		Acc_addr[40] = "/home/CELLON/CELLON/Acc_data.txt";
+char		ROI_flag_addr[40] = "/home/CELLON/CELLON/ROI_flag_data.txt";
+char            NP_flag_addr[40] = "/home/CELLON/CELLON/NP_flag_data.txt";
+char            total_data_addr[40] = "/home/CELLON/CELLON/total_data.txt";
+char            good_data_addr[40] = "/home/CELLON/CELLON/good_data.txt";
+char            bad_data_addr[40] = "/home/CELLON/CELLON/bad_data.txt";
+char		Live_mode_addr[40] = "/home/CELLON/CELLON/Live_data.txt";
+char		result_image_addr[40] = "/home/CELLON/CELLON/Result/";
 char            Fput_STR[100];
 
 const int	Led[] = { 18, 23, 24 };		//Led[0] = Ready, Led[1] = Bad, Led[2] = Good
@@ -633,8 +633,8 @@ void USB_Backup(){
 	imshow("Show_Frame", Show_Frame);
 	waitKey(1);
 
-	string path = "/media/cellon/";
-	string Image_Path = "/home/cellon/CELLON/Result/";
+	string path = "/media/CELLON/";
+	string Image_Path = "/home/CELLON/CELLON/Result/";
 
 	try {
 		for (const auto& entry : fs::directory_iterator(path)) {
@@ -1403,7 +1403,7 @@ int main() {
 	}
 
 
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 7; i++) {
 		char Fread_Path[70];
 		sprintf(Fread_Path, "%sROI_NUM_%d.PNG", img_data_addr, i);
 
@@ -1516,6 +1516,7 @@ int main() {
 			char		maxv_S[11];
 			char		result_S[10];
 			bool		Compare_Flag = true;
+			string		save_roi_maxv[7];
 
 			for (int i = 0; i < 28; i += 4) {
 				Inspect_ROI = Mat(frame, Rect(Point(Inspect_ROI_Point[i], Inspect_ROI_Point[i + 1]),
@@ -1544,20 +1545,7 @@ int main() {
 							std_Red += (int)Standard_ROI_blur.at<Vec3b>(x, y)[2];
 						}
 					}
-					//CELLON 1.3v
-					/*	unsigned int dis_Blue = fabs(Blue - std_Blue);
-						unsigned int dis_Green = fabs(Green - std_Green);
-						unsigned int dis_Red = fabs(Red - std_Red);
-						cout << "BGR : " << Blue << ", " << Green << ", " << Red << endl;
-						cout << "std_BGR : " << std_Blue << ", " << std_Green << ", " << std_Red << endl;
-						cout << "dis_BGR : " << dis_Blue << ", " << dis_Green << ", " << dis_Red << endl;
-					//Comparision color wight Blue 50%, Green 25%, Red 25%, Because yellow is for sensitive reaction to colors.
-						double Blue_Percentage = (double)dis_Blue / std_Blue * 50;
-						double Green_Percentage = (double)dis_Green / std_Green * 25;
-						double Red_Percentage = (double)dis_Red / std_Red * 25;
-						maxv = Blue_Percentage + Green_Percentage + Red_Percentage;
-						cout << "BGR Each Percentage : " << Blue_Percentage << ", " << Green_Percentage << ", " << Red_Percentage << endl;
-					*/
+
 					int sum = Blue + Green + Red;
 					double ratio_blue = (double)Blue / sum;
 					double ratio_green = (double)Green / sum;
@@ -1573,13 +1561,13 @@ int main() {
 					diff[1] = fabs(ratio_green - std_ratio_green);
 					diff[2] = fabs(ratio_red - std_ratio_red);
 
-					//					cout << "INS_BGR_Balance : " << ratio_blue << ", " << ratio_green << ", " << ratio_red << endl;
-					//					cout << "STD_BGR_Balance : " << std_ratio_blue << ", " << std_ratio_green << ", " << std_ratio_red << endl;
-					//					cout << "diff : " << diff[0] << ", " << diff[1] << ", " << diff[2] << endl << endl;
-
 					maxv = (diff[0] + diff[1] + diff[2]) * 100;
 
 					maxv = 100 - maxv;
+
+					sprintf(maxv_S, "%.2f", maxv);
+					save_roi_maxv[i / 4] = to_string(i / 4 + 1) + " : " + maxv_S;
+
 					sprintf(maxv_S, "%d : %.2f", i / 4 + 1, maxv);
 					State_Message_S[7] = maxv_S;
 					State_Message();
@@ -1592,8 +1580,6 @@ int main() {
 					}
 				}
 			}
-
-			//			cout << "----------------------------" << endl;
 
 			end = clock();
 			result = (double)(end - start);
@@ -1633,6 +1619,28 @@ int main() {
 			Mat write_image;
 			Size newSize(320, 240);
 			resize(frame, write_image, newSize);
+
+			Point wp  = Point(10, 160);
+			for(int i = 0; i < 7; i++){
+				if(ROI_flag[i]){
+					putText(write_image, save_roi_maxv[i], wp, FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0, 0, 0), 2);
+					putText(write_image, save_roi_maxv[i], wp, FONT_HERSHEY_SIMPLEX, 0.4, Scalar(255, 255, 255), 1);
+					wp += Point(0, 10);
+				}
+			}
+
+			for (int j = 0; j < 28; j += 4) {
+	                        if (ROI_flag[j / 4]) {
+	                                char num_str[2];
+	                                int num = j / 4 + 1;
+	                                sprintf(num_str, "%d", num);
+	                                putText(write_image, num_str, Point(Inspect_ROI_Point[j] / 2, Inspect_ROI_Point[j + 1] / 2) - Point(5, 3), FONT_HERSHEY_SIMPLEX,
+	                                        0.5, Scalar(0, 0, 255), 0.5);
+	                                rectangle(write_image, Rect(Point(Inspect_ROI_Point[j] / 2, Inspect_ROI_Point[j + 1] / 2),
+	                                        Point(Inspect_ROI_Point[j + 2] / 2, Inspect_ROI_Point[j + 3] / 2)), Scalar(0, 0, 255), 1);
+	                        }
+	                }
+
 			if (Compare_Flag == false) {
 				Compare_Bad++;
 				Compare_State(Scalar(0, 0, 255));
