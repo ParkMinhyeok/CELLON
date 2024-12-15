@@ -64,17 +64,17 @@ Point		Resolution_Point = Point(90, 200);
 unsigned int	width, height, ch_width_temp, ch_height_temp;
 int		State_Message_Flag = 0;
 
-char		img_data_addr[40] = "/home/CELLON/CELLON/";
-char		resol_data_addr[40] = "/home/CELLON/CELLON/resol_data.txt";
-char		Point_data_addr[40] = "/home/CELLON/CELLON/Point_data.txt";
-char		Acc_addr[40] = "/home/CELLON/CELLON/Acc_data.txt";
-char		ROI_flag_addr[40] = "/home/CELLON/CELLON/ROI_flag_data.txt";
-char            NP_flag_addr[40] = "/home/CELLON/CELLON/NP_flag_data.txt";
-char            total_data_addr[40] = "/home/CELLON/CELLON/total_data.txt";
-char            good_data_addr[40] = "/home/CELLON/CELLON/good_data.txt";
-char            bad_data_addr[40] = "/home/CELLON/CELLON/bad_data.txt";
-char		Live_mode_addr[40] = "/home/CELLON/CELLON/Live_data.txt";
-char		result_image_addr[40] = "/home/CELLON/CELLON/Result/";
+char		img_data_addr[40] = "/home/cellon/CELLON/";
+char		resol_data_addr[40] = "/home/cellon/CELLON/resol_data.txt";
+char		Point_data_addr[40] = "/home/cellon/CELLON/Point_data.txt";
+char		Acc_addr[40] = "/home/cellon/CELLON/Acc_data.txt";
+char		ROI_flag_addr[40] = "/home/cellon/CELLON/ROI_flag_data.txt";
+char            NP_flag_addr[40] = "/home/cellon/CELLON/NP_flag_data.txt";
+char            total_data_addr[40] = "/home/cellon/CELLON/total_data.txt";
+char            good_data_addr[40] = "/home/cellon/CELLON/good_data.txt";
+char            bad_data_addr[40] = "/home/cellon/CELLON/bad_data.txt";
+char		Live_mode_addr[40] = "/home/cellon/CELLON/Live_data.txt";
+char		result_image_addr[40] = "/home/cellon/CELLON/Result/";
 char            Fput_STR[100];
 
 const int	Led[] = { 18, 23, 24 };		//Led[0] = Ready, Led[1] = Bad, Led[2] = Good
@@ -633,8 +633,8 @@ void USB_Backup(){
 	imshow("Show_Frame", Show_Frame);
 	waitKey(1);
 
-	string path = "/media/CELLON/";
-	string Image_Path = "/home/CELLON/CELLON/Result/";
+	string path = "/media/cellon/";
+	string Image_Path = "/home/cellon/CELLON/Result/";
 
 	try {
 		for (const auto& entry : fs::directory_iterator(path)) {
